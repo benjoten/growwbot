@@ -1,0 +1,12 @@
+growwapi>=1.5.0
+pyotp>=2.10.0
+flask>=3.1.0
+python-dotenv>=1.2.0
+requests>=2.32.0
+pandas>=2.2.0
+numpy>=1.26.0
+yfinance>=0.2.40
+pyyaml>=6.0.0
+pydantic>=2.7.0
+pytz>=2024.1
+delta-rest-client>=1.0.14

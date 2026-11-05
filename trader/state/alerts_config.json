@@ -1,0 +1,12 @@
+{
+  "telegram_enabled": true,
+  "telegram_bot_token": "9081514740:AAFH4MwET_9scNoe0-_IcfXG7948cxeW2II",
+  "telegram_chat_id": "680948265",
+  "email_enabled": false,
+  "email_to": "",
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "",
+  "smtp_password": "",
+  "auto_scan_at_9am": true
+}

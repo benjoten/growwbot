@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+key.txt
+*.log
+*.rar
+cloudflared.exe
+trader/state/*.log

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  daytrader-system:
+    build: .
+    container_name: daytrader_autonomous_system
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - TZ=Asia/Kolkata
+      - FLASK_PORT=5000
+      - FLASK_DEBUG=false
+    volumes:
+      - ./trader/state:/app/trader/state
+      - ./trader/config:/app/trader/config
+      - ./.env:/app/.env
+

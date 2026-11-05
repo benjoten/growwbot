@@ -1,0 +1,226 @@
+system:
+  name: "DayTrader Autonomous Bi-Directional System"
+  version: "2.0.0"
+  timezone: "Asia/Kolkata"
+  environment: "production"
+
+scheduler:
+  equities_indices:
+    cron_hour: 9
+    cron_minute: 0
+    days: "mon-fri"
+    auto_scan_on_startup: true
+  crypto:
+    interval_minutes: 15
+    continuous_24x7: true
+
+universe:
+  indices:
+    - symbol: "NIFTY"
+      name: "Nifty 50 Index"
+      ticker: "^NSEI"
+      exchange: "NSE"
+      lot_size: 25
+      strike_step: 50
+      atm_delta: 0.50
+      otm_delta: 0.35
+      expiry_type: "weekly"
+    - symbol: "BANKNIFTY"
+      name: "Bank Nifty Index"
+      ticker: "^NSEBANK"
+      exchange: "NSE"
+      lot_size: 15
+      strike_step: 100
+      atm_delta: 0.50
+      otm_delta: 0.35
+      expiry_type: "weekly"
+    - symbol: "FINNIFTY"
+      name: "Nifty Financial Services"
+      ticker: "NIFTY_FIN_SERVICE.NS"
+      exchange: "NSE"
+      lot_size: 25
+      strike_step: 50
+      atm_delta: 0.50
+      otm_delta: 0.35
+      expiry_type: "weekly"
+    - symbol: "SENSEX"
+      name: "BSE Sensex 30"
+      ticker: "^BSESN"
+      exchange: "BSE"
+      lot_size: 10
+      strike_step: 100
+      atm_delta: 0.50
+      otm_delta: 0.35
+      expiry_type: "weekly"
+
+  equities:
+    - symbol: "RELIANCE"
+      name: "Reliance Industries Ltd"
+      ticker: "RELIANCE.NS"
+      exchange: "NSE"
+      sector: "Energy / Telecom"
+      beta: 1.05
+    - symbol: "HDFCBANK"
+      name: "HDFC Bank Ltd"
+      ticker: "HDFCBANK.NS"
+      exchange: "NSE"
+      sector: "Banking"
+      beta: 1.10
+    - symbol: "ICICIBANK"
+      name: "ICICI Bank Ltd"
+      ticker: "ICICIBANK.NS"
+      exchange: "NSE"
+      sector: "Banking"
+      beta: 1.15
+    - symbol: "SBIN"
+      name: "State Bank of India"
+      ticker: "SBIN.NS"
+      exchange: "NSE"
+      sector: "PSU Banking"
+      beta: 1.35
+    - symbol: "TCS"
+      name: "Tata Consultancy Services"
+      ticker: "TCS.NS"
+      exchange: "NSE"
+      sector: "IT Services"
+      beta: 0.85
+    - symbol: "INFY"
+      name: "Infosys Ltd"
+      ticker: "INFY.NS"
+      exchange: "NSE"
+      sector: "IT Services"
+      beta: 1.05
+    - symbol: "WIPRO"
+      name: "Wipro Ltd"
+      ticker: "WIPRO.NS"
+      exchange: "NSE"
+      sector: "IT Services"
+      beta: 0.95
+    - symbol: "BAJFINANCE"
+      name: "Bajaj Finance Ltd"
+      ticker: "BAJFINANCE.NS"
+      exchange: "NSE"
+      sector: "NBFC / FinTech"
+      beta: 1.25
+    - symbol: "LT"
+      name: "Larsen & Toubro Ltd"
+      ticker: "LT.NS"
+      exchange: "NSE"
+      sector: "Infra & Defense"
+      beta: 1.05
+    - symbol: "BHARTIARTL"
+      name: "Bharti Airtel Ltd"
+      ticker: "BHARTIARTL.NS"
+      exchange: "NSE"
+      sector: "Telecom"
+      beta: 0.95
+    - symbol: "MARUTI"
+      name: "Maruti Suzuki India"
+      ticker: "MARUTI.NS"
+      exchange: "NSE"
+      sector: "Automotive"
+      beta: 0.90
+    - symbol: "AXISBANK"
+      name: "Axis Bank Ltd"
+      ticker: "AXISBANK.NS"
+      exchange: "NSE"
+      sector: "Banking"
+      beta: 1.20
+    - symbol: "SUNPHARMA"
+      name: "Sun Pharmaceutical Ind"
+      ticker: "SUNPHARMA.NS"
+      exchange: "NSE"
+      sector: "Pharma"
+      beta: 0.70
+    - symbol: "TITAN"
+      name: "Titan Company Ltd"
+      ticker: "TITAN.NS"
+      exchange: "NSE"
+      sector: "Consumer Goods"
+      beta: 1.00
+    - symbol: "ADANIENT"
+      name: "Adani Enterprises Ltd"
+      ticker: "ADANIENT.NS"
+      exchange: "NSE"
+      sector: "Conglomerate"
+      beta: 1.65
+
+  crypto_perpetuals:
+    - symbol: "BTCUSDT"
+      name: "Bitcoin Perpetual"
+      base_asset: "BTC"
+      quote_asset: "USDT"
+      tick_size: 0.1
+      contract_multiplier: 0.001
+      default_leverage: 10
+      max_leverage: 50
+    - symbol: "ETHUSDT"
+      name: "Ethereum Perpetual"
+      base_asset: "ETH"
+      quote_asset: "USDT"
+      tick_size: 0.01
+      contract_multiplier: 0.01
+      default_leverage: 10
+      max_leverage: 50
+    - symbol: "SOLUSDT"
+      name: "Solana Perpetual"
+      base_asset: "SOL"
+      quote_asset: "USDT"
+      tick_size: 0.001
+      contract_multiplier: 0.1
+      default_leverage: 10
+      max_leverage: 25
+
+strategy:
+  multi_timeframe:
+    trend_timeframe: "1h"
+    structure_timeframe: "15m"
+    trigger_timeframe: "5m"
+  momentum:
+    rsi_period: 14
+    rsi_long_threshold: 52.0
+    rsi_short_threshold: 48.0
+    adx_period: 14
+    adx_trend_threshold: 22.0
+    supertrend_period: 10
+    supertrend_multiplier: 3.0
+  volume_profile:
+    value_area_pct: 0.70
+    volume_surge_multiplier: 1.35
+  options_greeks:
+    max_iv_rank_for_buying: 70.0
+    theta_cutoff_time: "14:15"
+    delta_atm_target: 0.50
+    delta_otm_target: 0.35
+  risk_reward:
+    target_1_multiple: 1.50
+    target_2_multiple: 2.50
+    stop_loss_multiple: 1.00
+    slippage_equities_pct: 0.0010
+    slippage_options_pct: 0.0040
+    slippage_crypto_pct: 0.0005
+    max_risk_per_trade_pct: 1.50
+    default_equity_capital_inr: 500000
+    default_crypto_capital_usdt: 50000
+
+tradingview_widget:
+  container_id: "tradingview_advanced_chart"
+  theme: "dark"
+  default_timeframe: "15"
+  default_symbol: "NIFTY"
+  chart_type: "candlesticks"
+  timezone: "Asia/Kolkata"
+  colors:
+    entry_fill: "rgba(6, 182, 212, 0.18)"
+    entry_border: "#06b6d4"
+    target1: "#10b981"
+    target2: "#059669"
+    stop_loss: "#ef4444"
+    text_color: "#f8fafc"
+
+output:
+  json_state_file: "trader/state/trade_tickets_latest.json"
+  csv_state_file: "trader/state/trade_tickets_latest.csv"
+  telegram_alerts:
+    enabled: true
+    min_confidence: 75

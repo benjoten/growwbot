@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delta Exchange Terminal | Crypto Futures & Options</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- TradingView Advanced Charting Library Widget -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        trade: {
+                            bg: '#080c14',
+                            card: '#0f172a',
+                            border: '#1e293b',
+                            input: '#020617',
+                            accent: '#f59e0b',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            cyan: '#06b6d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        .pulse-dot {
+            animation: pulse-dot-anim 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-dot-anim {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .4; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Top Navbar with Unified Broker Switcher -->
+    <nav class="border-b border-trade-border bg-trade-card/90 backdrop-blur sticky top-0 z-50 px-4 lg:px-6 py-2.5">
+        <div class="max-w-[1700px] mx-auto flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand & Broker Identity -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-amber-500/20 font-black text-black text-lg">
+                    Δ
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-base font-bold tracking-tight text-white">DELTA EXCHANGE</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">Crypto Derivatives</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Perpetual Futures &bull; 100x Leverage &bull; Autonomous OCO Brackets</p>
+                </div>
+            </div>
+
+            <!-- Header Metrics & Unified Broker Switcher -->
+            <div class="flex items-center flex-wrap gap-2.5">
+
+                <!-- 24/7 Crypto Market Indicator -->
+                <div class="bg-slate-900 border border-slate-700/60 rounded-lg px-3 py-1 flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+                    <span class="text-slate-400">Crypto:</span>
+                    <span class="font-mono font-semibold text-emerald-400">24/7 LIVE</span>
+                </div>
+
+                <!-- Delta Connection Status / Config -->
+                <div onclick="openDeltaConfigModal()" class="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-amber-500/40 rounded-lg px-3 py-1 flex items-center gap-2 text-xs transition">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span id="delta-mode-label" class="text-amber-300 font-semibold font-mono">DELTA SIMULATED</span>
+                    <span class="text-[10px] text-slate-400 underline">Config API</span>
+                </div>
+
+                <!-- Account Balances & Live P&L Ribbon -->
+                <div class="bg-slate-900 border border-slate-700/60 rounded-lg px-3 py-1 flex items-center gap-3 text-xs">
+                    <div>
+                        <span class="text-slate-500 text-[10px] uppercase">Cash:</span>
+                        <span id="header-cash" class="font-mono font-bold text-white ml-1">50,000.00 USDT</span>
+                    </div>
+                    <div class="border-l border-slate-700 pl-2">
+                        <span class="text-slate-500 text-[10px] uppercase">Avail Margin:</span>
+                        <span id="header-margin" class="font-mono font-semibold text-amber-400 ml-1">500,000.00 USDT</span>
+                    </div>
+                    <div class="border-l border-slate-700 pl-2">
+                        <span class="text-slate-500 text-[10px] uppercase">Unrealized P&amp;L:</span>
+                        <span id="header-unrealized-pl" class="font-mono font-bold text-emerald-400 ml-1">+0.00 USDT</span>
+                    </div>
+                    <div class="border-l border-slate-700 pl-2">
+                        <span class="text-slate-500 text-[10px] uppercase">Realized P&amp;L:</span>
+                        <span id="header-realized-pl" class="font-mono font-bold text-slate-300 ml-1">0.00 USDT</span>
+                    </div>
+                </div>
+
+                <!-- UNIFIED BROKER SWITCHER DROPDOWN -->
+                <div class="relative">
+                    <button onclick="toggleBrokerMenu()" id="btn-broker-switch" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/10 hover:from-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
+                        <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i>
+                        <span>SWITCH BROKER</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </button>
+
+                    <!-- Broker Selection Menu -->
+                    <div id="broker-dropdown-menu" class="hidden absolute right-0 mt-2 w-80 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl z-50 p-2 space-y-1.5 backdrop-blur-xl">
+                        <div class="px-3 py-2 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Connected Trading Terminals
+                        </div>
+
+                        <!-- Option 1: Groww India -->
+                        <a href="/groww" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm border border-emerald-500/30">
+                                    G
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white group-hover:text-emerald-400 transition flex items-center gap-1.5">
+                                        <span>Groww India</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">NSE / BSE Stocks &amp; F&amp;O</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Connected</span>
+                        </a>
+
+                        <!-- Option 2: Alpaca US -->
+                        <a href="/us" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-sm border border-cyan-500/30">
+                                    A
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white group-hover:text-cyan-400 transition flex items-center gap-1.5">
+                                        <span>Alpaca US Trader</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">US Equities (NASDAQ / NYSE)</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">Active</span>
+                        </a>
+
+                        <!-- Option 3: Delta Exchange (Current) -->
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/30 text-amber-300 font-black flex items-center justify-center text-sm border border-amber-500/50">
+                                    Δ
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                                        <span>Delta Exchange</span>
+                                        <span class="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200">Current</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">Crypto Futures &amp; Options</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Live</span>
+                        </div>
+
+                        <!-- Option 4: AI Indian Stock Screener -->
+                        <a href="/screener" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 text-cyan-400 font-bold flex items-center justify-center text-sm border border-cyan-500/30">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white group-hover:text-cyan-400 transition flex items-center gap-1.5">
+                                        <span>AI Stock Screener</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">9:00 AM IST Pre-Market Top Setups</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">Live AI</span>
+                        </a>
+
+                        <!-- Option 5: Autonomous DayTrader -->
+                        <a href="/system" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/80 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-sm border border-cyan-500/40">
+                                    <i data-lucide="compass" class="w-4 h-4 text-cyan-300"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition flex items-center gap-1.5">
+                                        <span>Autonomous DayTrader</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">Bi-Directional Long/Short Engine</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Active</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-[1700px] w-full mx-auto px-3 lg:px-6 py-4 space-y-4">
+
+        <!-- Notification Toast -->
+        <div id="toast" class="hidden fixed top-16 right-6 z-50 max-w-md p-4 rounded-xl border shadow-2xl transition-all duration-300 flex items-start gap-3"></div>
+
+        <!-- Delta API Configuration Modal -->
+        <div id="delta-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div class="bg-trade-card border border-trade-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-trade-border pb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="key" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="text-sm font-bold text-white">Delta Exchange API Setup</h3>
+                    </div>
+                    <button onclick="closeDeltaConfigModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Enter your Delta Exchange API credentials below for automated crypto futures trading. Leave blank to practice with the built-in <strong>50,000 USDT Virtual Paper Simulator</strong>.
+                </p>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Environment</label>
+                        <select id="input-delta-env" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:border-amber-400 focus:outline-none">
+                            <option value="testnet_india" selected>Testnet / Demo (India - demo.delta.exchange)</option>
+                            <option value="testnet_global">Testnet / Demo (Global - testnet-api.delta.exchange)</option>
+                            <option value="production_india">Live Production (India - api.india.delta.exchange)</option>
+                            <option value="production_global">Live Production (Global - api.delta.exchange)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">DELTA_API_KEY</label>
+                        <input type="text" id="input-delta-key" value="u7SrQxD6rzNG5DlhrJ2Qy4VRXhCmNi" placeholder="Paste Delta API Key" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:border-amber-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">DELTA_API_SECRET</label>
+                        <input type="password" id="input-delta-secret" value="70Zf7A3MBz8MdlKI4UK3Lh5Axelatl4oTTp5Smu2nJjs9l9Jvhrvz81kl279" placeholder="Paste Delta API Secret" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-2 text-white font-mono focus:border-amber-400 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeDeltaConfigModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
+                    <button onclick="saveDeltaKeys()" class="px-4 py-2 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-black shadow-lg shadow-amber-500/20">Save &amp; Connect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Position Bracket Edit Modal (Update SL / TP) -->
+        <div id="bracket-edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div class="bg-trade-card border border-trade-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-trade-border pb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="text-sm font-bold text-white">Manage Crypto Position Brackets</h3>
+                    </div>
+                    <button onclick="closeEditBracketsModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+                <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5 text-xs font-mono">
+                    <div class="flex justify-between text-slate-400"><span>Contract:</span><strong id="modal-bracket-symbol" class="text-white text-sm">--</strong></div>
+                    <div class="flex justify-between text-slate-400"><span>Avg Entry Price:</span><span id="modal-bracket-entry" class="text-slate-200">$0.00</span></div>
+                    <div class="flex justify-between text-slate-400"><span>Current Mark Price:</span><span id="modal-bracket-current" class="text-amber-400 font-bold">$0.00</span></div>
+                </div>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1 flex items-center justify-between">
+                            <span>Take-Profit Target ($)</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">Auto-closes at profit</span>
+                        </label>
+                        <input type="number" step="0.5" id="modal-bracket-tp" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 font-mono focus:border-emerald-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1 flex items-center justify-between">
+                            <span>Stop-Loss Price ($)</span>
+                            <span class="text-[10px] text-rose-400 font-mono">Auto-closes to limit loss</span>
+                        </label>
+                        <input type="number" step="0.5" id="modal-bracket-sl" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-2 text-rose-300 font-mono focus:border-rose-400 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeEditBracketsModal()" class="px-4 py-2 rounded-lg text-xs bg-slate-800 text-slate-300 hover:bg-slate-700">Cancel</button>
+                    <button onclick="submitBracketUpdate()" class="px-4 py-2 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-black">Save Brackets</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Crypto Watchlist Bar -->
+        <div class="bg-trade-card border border-trade-border rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <!-- Search & Quick Ticker Selector -->
+            <div class="flex items-center gap-2">
+                <div class="relative w-48 sm:w-56">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" id="symbol-input" placeholder="Crypto Pair (e.g. BTCUSDT)" 
+                           onkeydown="if(event.key==='Enter') selectCrypto(this.value)"
+                           class="w-full bg-trade-input border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono uppercase">
+                </div>
+                <button onclick="selectCrypto(document.getElementById('symbol-input').value)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition">
+                    Load
+                </button>
+            </div>
+
+            <!-- Pre-populated Perpetual Watchlist Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1" id="crypto-pills">
+                <button onclick="selectCrypto('BTCUSDT')" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1.5">
+                    <span>BTCUSDT</span><span class="text-[10px] text-slate-500 font-sans">100x</span>
+                </button>
+                <button onclick="selectCrypto('ETHUSDT')" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1.5">
+                    <span>ETHUSDT</span><span class="text-[10px] text-slate-500 font-sans">100x</span>
+                </button>
+                <button onclick="selectCrypto('SOLUSDT')" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1.5">
+                    <span>SOLUSDT</span><span class="text-[10px] text-slate-500 font-sans">50x</span>
+                </button>
+                <button onclick="selectCrypto('XRPUSDT')" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1.5">
+                    <span>XRPUSDT</span><span class="text-[10px] text-slate-500 font-sans">50x</span>
+                </button>
+                <button onclick="selectCrypto('DOGEUSDT')" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-400 transition flex items-center gap-1.5">
+                    <span>DOGEUSDT</span><span class="text-[10px] text-slate-500 font-sans">50x</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Central Workstation: TradingView Chart + Delta Order Ticket -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Chart Section (8 Cols) -->
+            <div class="lg:col-span-8 flex flex-col space-y-3">
+                <div class="bg-trade-card border border-trade-border rounded-xl overflow-hidden shadow-xl flex flex-col h-[520px]">
+                    <!-- Chart Sub-header -->
+                    <div class="px-4 py-2.5 bg-slate-900/90 border-b border-trade-border flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span id="chart-symbol-badge" class="text-base font-bold font-mono text-white tracking-wide">BTCUSDT</span>
+                            <span id="chart-price-badge" class="text-lg font-bold font-mono text-amber-400">$80,592.50</span>
+                            <span id="chart-change-badge" class="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">+3.77%</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs font-mono">
+                            <span class="text-slate-400">24h High: <strong id="metric-high" class="text-slate-200">$81,131.00</strong></span>
+                            <span class="text-slate-600">&bull;</span>
+                            <span class="text-slate-400">24h Low: <strong id="metric-low" class="text-slate-200">$75,800.50</strong></span>
+                            <span class="text-slate-600">&bull;</span>
+                            <span class="text-slate-400">Funding: <strong id="metric-funding" class="text-emerald-400">0.0100%</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- TradingView Chart Container -->
+                    <div class="flex-1 w-full h-full relative" id="tradingview_widget_box">
+                        <div id="tradingview_chart" style="height:100%;width:100%"></div>
+                    </div>
+                </div>
+
+                <!-- CRYPTO DERIVATIVES SIGNALS & EXECUTION LEVELS DASHBOARD -->
+                <div class="bg-trade-card border border-trade-border rounded-xl p-4 shadow-xl space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-trade-border pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                                <i data-lucide="crosshair" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-xs font-bold uppercase tracking-wider text-white">Crypto Derivatives Trading Signals</h3>
+                                    <span id="signal-direction-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">BUY / LONG ACTIVE</span>
+                                </div>
+                                <div id="signal-strategy-text" class="text-[11px] text-slate-400 font-mono mt-0.5">Perpetual VWAP Momentum &amp; Range Breakout</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="signal-rr-badge" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-cyan-300 font-mono text-xs font-semibold">R:R 1 : 2.50</span>
+                            <button onclick="applySignalToTicket(1)" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition">
+                                <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                                <span>Apply to Ticket</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4-Column Key Execution Levels: Entry, Target 1, Target 2, Stop-Loss -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                        <!-- 1. Entry Point & Range -->
+                        <div class="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-3 relative overflow-hidden group hover:border-cyan-400/60 transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Entry Point (Trigger)</span>
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                            </div>
+                            <div class="text-lg font-extrabold font-mono text-cyan-300 mt-1" id="signal-entry-price">$80,000.00</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">Range: <span id="signal-entry-range" class="text-slate-200">$79,840 - $80,096</span></div>
+                            <div class="mt-2 text-[10px] text-cyan-400/90 font-mono bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 inline-block">Optimal Entry Trigger</div>
+                        </div>
+
+                        <!-- 2. Target 1 (Conservative Take-Profit) -->
+                        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 relative overflow-hidden group hover:border-emerald-400/60 transition cursor-pointer" onclick="applySignalToTicket(1)" title="Click to apply Target 1 to Ticket">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Target 1 (1.5R Exit)</span>
+                                <span class="text-[10px] font-mono text-emerald-400 font-semibold" id="signal-t1-gain">+1.20%</span>
+                            </div>
+                            <div class="text-lg font-extrabold font-mono text-emerald-400 mt-1" id="signal-target-1">$80,960.00</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">Exp Profit: <span id="signal-t1-profit" class="text-emerald-300 font-bold">+$9.60 USDT</span></div>
+                            <div class="mt-2 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 inline-flex items-center justify-between w-full">
+                                <span>ROI on Margin:</span>
+                                <strong id="signal-t1-roi" class="font-bold">+12.0%</strong>
+                            </div>
+                        </div>
+
+                        <!-- 3. Target 2 (Extended Take-Profit) -->
+                        <div class="bg-slate-900/90 border border-emerald-500/40 rounded-xl p-3 relative overflow-hidden group hover:border-emerald-400/70 transition cursor-pointer" onclick="applySignalToTicket(2)" title="Click to apply Target 2 to Ticket">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] uppercase font-bold text-emerald-300 tracking-wider">Target 2 (2.5R Exit)</span>
+                                <span class="text-[10px] font-mono text-emerald-300 font-semibold" id="signal-t2-gain">+2.00%</span>
+                            </div>
+                            <div class="text-lg font-extrabold font-mono text-emerald-300 mt-1" id="signal-target-2">$81,600.00</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">Exp Profit: <span id="signal-t2-profit" class="text-emerald-200 font-bold">+$16.00 USDT</span></div>
+                            <div class="mt-2 text-[10px] text-emerald-300 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 inline-flex items-center justify-between w-full">
+                                <span>ROI on Margin:</span>
+                                <strong id="signal-t2-roi" class="font-bold">+20.0%</strong>
+                            </div>
+                        </div>
+
+                        <!-- 4. Stop-Loss (Protective SL) -->
+                        <div class="bg-slate-900/90 border border-rose-500/30 rounded-xl p-3 relative overflow-hidden group hover:border-rose-400/60 transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Stop-Loss (Protective)</span>
+                                <span class="text-[10px] font-mono text-rose-400 font-semibold" id="signal-sl-loss">-0.80%</span>
+                            </div>
+                            <div class="text-lg font-extrabold font-mono text-rose-400 mt-1" id="signal-stop-loss">$79,360.00</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">Max Loss: <span id="signal-sl-risk" class="text-rose-300 font-bold">-$6.40 USDT</span></div>
+                            <div class="mt-2 text-[10px] text-rose-400 font-mono bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 inline-flex items-center justify-between w-full">
+                                <span>Risk on Margin:</span>
+                                <strong id="signal-sl-roi" class="font-bold">-8.0%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk & Technical Reasoning Bar -->
+                    <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-slate-500 font-mono">Position Size: <strong id="signal-pos-info" class="text-white">10 Contracts (0.010 BTC)</strong></span>
+                            <span class="text-slate-600">&bull;</span>
+                            <span class="text-slate-500 font-mono">Notional: <strong id="signal-notional" class="text-white">$800.00 USDT</strong></span>
+                            <span class="text-slate-600">&bull;</span>
+                            <span class="text-slate-500 font-mono">Margin Req (10x): <strong id="signal-margin" class="text-amber-400">$80.00 USDT</strong></span>
+                        </div>
+                        <div class="text-slate-400 italic text-[11px] flex-1 min-w-[240px] text-right" id="signal-reasoning">
+                            Bullish momentum above 24h support with 1:2.50 R:R.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Market Metrics Below Chart -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-trade-card border border-trade-border rounded-xl p-3">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Underlying Spot</div>
+                        <div class="text-base font-bold font-mono text-white mt-1" id="stat-spot">$80,630.40</div>
+                        <div class="text-[10px] text-slate-500">Delta index price</div>
+                    </div>
+                    <div class="bg-trade-card border border-trade-border rounded-xl p-3">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">24h Volume</div>
+                        <div class="text-base font-bold font-mono text-amber-400 mt-1" id="stat-vol">-- BTC</div>
+                        <div class="text-[10px] text-slate-500">24h trading volume</div>
+                    </div>
+                    <div class="bg-trade-card border border-trade-border rounded-xl p-3">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Open Interest</div>
+                        <div class="text-base font-bold font-mono text-cyan-400 mt-1" id="stat-oi">-- Contracts</div>
+                        <div class="text-[10px] text-slate-500">Active positions</div>
+                    </div>
+                    <div class="bg-trade-card border border-trade-border rounded-xl p-3">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Max Leverage</div>
+                        <div class="text-base font-bold font-mono text-purple-400 mt-1" id="stat-leverage">100x</div>
+                        <div class="text-[10px] text-slate-500">Cross / Isolated</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Delta Crypto Order Ticket (4 Cols) -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="bg-trade-card border border-trade-border rounded-xl p-4 shadow-xl space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-trade-border pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-white">Delta Crypto Order Ticket</h3>
+                        </div>
+                        <span id="ticket-mode-badge" class="text-[10px] px-2 py-0.5 rounded font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30">DELTA SIMULATED</span>
+                    </div>
+
+                    <!-- Order Type & Leverage -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Order Type</label>
+                            <select id="order-type" onchange="onOrderTypeChange(); updateTicketLiveCalculations();" class="w-full bg-trade-input border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-amber-400 focus:outline-none">
+                                <option value="market">Market Order</option>
+                                <option value="limit">Limit Order</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Leverage</label>
+                            <select id="order-leverage" onchange="loadCryptoSignal(currentCrypto); updateTicketLiveCalculations();" class="w-full bg-trade-input border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono focus:border-amber-400 focus:outline-none">
+                                <option value="1">1x (Spot)</option>
+                                <option value="5">5x</option>
+                                <option value="10" selected>10x</option>
+                                <option value="25">25x</option>
+                                <option value="50">50x</option>
+                                <option value="100">100x</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Size / Contracts -->
+                    <div class="text-xs">
+                        <label class="block text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+                            <span>Contract Size / Quantity</span>
+                            <span class="text-[10px] text-slate-500 font-mono" id="size-hint">1 contract = 0.001 BTC</span>
+                        </label>
+                        <input type="number" id="order-size" step="1" min="1" value="10" oninput="loadCryptoSignal(currentCrypto); updateTicketLiveCalculations();" class="w-full bg-trade-input border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-amber-400 focus:outline-none">
+                    </div>
+
+                    <!-- Custom Entry Limit Price (Visible for Limit Orders) -->
+                    <div id="entry-price-group" class="hidden text-xs">
+                        <label class="block text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+                            <span>Custom Entry Limit Price ($)</span>
+                            <span class="text-[10px] text-amber-400 font-mono">Fills when market &le; limit</span>
+                        </label>
+                        <input type="number" step="0.5" id="order-limit-price" placeholder="80500.00" oninput="updateTicketLiveCalculations();" class="w-full bg-trade-input border border-amber-500/40 rounded-lg px-3 py-1.5 text-xs text-amber-300 font-mono focus:border-amber-400 focus:outline-none">
+                    </div>
+
+                    <!-- OCO Bracket Inputs: Take-Profit & Stop-Loss -->
+                    <div class="space-y-1 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] text-slate-400">Take-Profit &amp; Stop-Loss (OCO)</span>
+                            <div class="flex items-center gap-1 font-mono text-[10px]">
+                                <button type="button" onclick="selectTicketTarget(1)" id="btn-ticket-t1" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 transition">T1 (1.5R)</button>
+                                <button type="button" onclick="selectTicketTarget(2)" id="btn-ticket-t2" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 hover:text-white transition">T2 (2.5R)</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-0.5">Target Price ($)</label>
+                                <input type="number" step="0.5" id="order-take-profit" placeholder="e.g. 82500" oninput="updateTicketLiveCalculations()" class="w-full bg-trade-input border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-mono focus:border-emerald-400 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-0.5">Stop-Loss Price ($)</label>
+                                <input type="number" step="0.5" id="order-stop-loss" placeholder="e.g. 79500" oninput="updateTicketLiveCalculations()" class="w-full bg-trade-input border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 font-mono focus:border-rose-400 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Order Sizing & Expected P&L Calculator -->
+                    <div id="ticket-pnl-card" class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 text-xs font-mono space-y-1.5 shadow-inner">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Position Margin (10x):</span>
+                            <span id="ticket-est-margin" class="font-bold text-amber-400">$80.00 USDT</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Max Risk at Stop:</span>
+                            <span id="ticket-est-loss" class="font-bold text-rose-400">-$6.40 USDT (-8.0%)</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Expected Target Profit:</span>
+                            <span id="ticket-est-profit" class="font-bold text-emerald-400">+$9.60 USDT (+12.0%)</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/80">
+                            <span class="text-slate-400">Risk-to-Reward Ratio:</span>
+                            <span id="ticket-est-rr" class="font-bold text-cyan-300">1 : 1.50</span>
+                        </div>
+                    </div>
+
+                    <!-- Automated Trade Management Info Banner -->
+                    <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[10px] text-slate-400 flex items-start gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                        <span><strong>Autonomous OCO Engine:</strong> When Target is hit, auto-closes position at profit &amp; cancels Stop-Loss. When Stop-Loss is hit, auto-closes to cap loss &amp; cancels Target.</span>
+                    </div>
+
+                    <!-- Order Action Buttons -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="executeCryptoOrder('buy')" id="btn-buy" class="py-2.5 px-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-black flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+                            <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
+                            <span id="btn-buy-label">LONG / BUY</span>
+                        </button>
+                        <button onclick="executeCryptoOrder('sell')" id="btn-sell" class="py-2.5 px-3 rounded-xl font-bold text-xs bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/20 transition">
+                            <i data-lucide="arrow-down-circle" class="w-4 h-4"></i>
+                            <span>SHORT / SELL</span>
+                        </button>
+                    </div>
+
+                    <!-- 1-Click Flatten Position Button -->
+                    <button onclick="closeCurrentPosition()" class="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 flex items-center justify-center gap-2 transition">
+                        <i data-lucide="x-circle" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>1-Click Close Active Position</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Suite: Tabs for Positions, Orders Log & Balances -->
+        <div class="bg-trade-card border border-trade-border rounded-xl shadow-xl overflow-hidden">
+            <!-- Tabs Bar -->
+            <div class="border-b border-trade-border flex items-center gap-1 px-4 overflow-x-auto custom-scrollbar">
+                <button onclick="switchTab('tab-positions')" id="btn-tab-positions" class="px-4 py-3 text-xs font-bold border-b-2 border-amber-400 text-amber-300 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i>
+                    <span>Open Crypto Positions (<span id="tab-pos-count">0</span>)</span>
+                </button>
+                <button onclick="switchTab('tab-orders')" id="btn-tab-orders" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                    <span>Session Orders Log &amp; OCO Status</span>
+                </button>
+                <button onclick="switchTab('tab-wallet')" id="btn-tab-wallet" class="px-4 py-3 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                    <span>Delta Wallet Balances</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: Open Positions -->
+            <div id="tab-positions" class="p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-amber-400"></i>
+                        Active Perpetual Futures Positions
+                    </h4>
+                    <span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+                        Live Mark Price &amp; P&amp;L Auto-Sync (2s)
+                    </span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-sans font-semibold uppercase text-[11px]">
+                            <tr>
+                                <th class="px-3 py-3">Contract</th>
+                                <th class="px-2 py-3">Side</th>
+                                <th class="px-2 py-3">Lev</th>
+                                <th class="px-3 py-3 text-right">Size (Contracts)</th>
+                                <th class="px-3 py-3 text-right">Entry Price</th>
+                                <th class="px-3 py-3 text-right">Mark Price</th>
+                                <th class="px-3 py-3 text-right text-orange-400">Est Liq Price</th>
+                                <th class="px-3 py-3 text-right text-rose-400">Stop-Loss</th>
+                                <th class="px-3 py-3 text-right text-emerald-400">Target (TP)</th>
+                                <th class="px-3 py-3 text-right">Margin</th>
+                                <th class="px-3 py-3 text-right">Unrealized P&amp;L</th>
+                                <th class="px-3 py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body" class="divide-y divide-slate-800">
+                            <tr><td colspan="12" class="px-4 py-8 text-center text-slate-500">No open positions. Use the Order Ticket to trade.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 2: Orders Log -->
+            <div id="tab-orders" class="hidden p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="w-4 h-4 text-emerald-400"></i>
+                        Delta Orders Log &amp; OCO Bracket Triggers
+                    </h4>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-sans font-semibold uppercase text-[11px]">
+                            <tr>
+                                <th class="px-3 py-3">Order ID</th>
+                                <th class="px-3 py-3">Contract</th>
+                                <th class="px-3 py-3">Side &amp; Type</th>
+                                <th class="px-2 py-3 text-right">Size</th>
+                                <th class="px-3 py-3 text-right">Limit / Trigger</th>
+                                <th class="px-3 py-3 text-right">Filled Price</th>
+                                <th class="px-3 py-3 text-right">Stop / Target</th>
+                                <th class="px-3 py-3">Status</th>
+                                <th class="px-3 py-3">Note &amp; Realized P&amp;L</th>
+                                <th class="px-2 py-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body" class="divide-y divide-slate-800">
+                            <tr><td colspan="10" class="px-4 py-8 text-center text-slate-500">No crypto orders recorded today.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: Wallet Balances -->
+            <div id="tab-wallet" class="hidden p-5 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                        <div class="text-xs text-slate-400 uppercase font-semibold">Tether (USDT) Balance</div>
+                        <div class="text-2xl font-bold font-mono text-emerald-400 mt-1" id="wallet-usdt">50,000.00 USDT</div>
+                        <div class="text-xs text-slate-500 mt-1">Available for collateral &amp; margin</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                        <div class="text-xs text-slate-400 uppercase font-semibold">Total Margin Power</div>
+                        <div class="text-2xl font-bold font-mono text-amber-400 mt-1" id="wallet-margin">500,000.00 USDT</div>
+                        <div class="text-xs text-slate-500 mt-1">At 10x cross-margin</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                        <div class="text-xs text-slate-400 uppercase font-semibold">Realized Profit / Loss</div>
+                        <div class="text-2xl font-bold font-mono text-slate-200 mt-1" id="wallet-realized">0.00 USDT</div>
+                        <div class="text-xs text-slate-500 mt-1">Cumulative booked profit</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        let currentCrypto = "BTCUSDT";
+        let tvWidget = null;
+        let activeTickerData = null;
+        let activeSignalData = null;
+        let activeTargetSelection = 1;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTradingView(currentCrypto);
+            loadTickerData(currentCrypto);
+            loadCryptoSignal(currentCrypto);
+            loadCryptoAccount();
+            renderIcons();
+
+            // Auto-sync polling every 2.5 seconds
+            setInterval(() => {
+                loadCryptoAccount();
+                loadTickerData(currentCrypto, false);
+            }, 2500);
+        });
+
+        function renderIcons() {
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Toggle Broker Dropdown Menu
+        function toggleBrokerMenu() {
+            const menu = document.getElementById('broker-dropdown-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicked outside
+        window.addEventListener('click', (e) => {
+            const container = document.getElementById('btn-broker-switch');
+            const menu = document.getElementById('broker-dropdown-menu');
+            if (menu && !menu.classList.contains('hidden') && !container.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('#tab-positions, #tab-orders, #tab-wallet').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('#btn-tab-positions, #btn-tab-orders, #btn-tab-wallet').forEach(btn => {
+                btn.classList.remove('border-amber-400', 'text-amber-300');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const targetBtn = document.getElementById('btn-' + tabId);
+            if (targetBtn) {
+                targetBtn.classList.remove('border-transparent', 'text-slate-400');
+                targetBtn.classList.add('border-amber-400', 'text-amber-300');
+            }
+            renderIcons();
+        }
+
+        // Order Type Toggle (Market vs Limit)
+        function onOrderTypeChange() {
+            const type = document.getElementById('order-type').value;
+            const entryGroup = document.getElementById('entry-price-group');
+            const buyLabel = document.getElementById('btn-buy-label');
+            const limitInput = document.getElementById('order-limit-price');
+
+            if (type === 'limit') {
+                entryGroup.classList.remove('hidden');
+                if (activeTickerData && !limitInput.value) {
+                    limitInput.value = activeTickerData.mark_price.toFixed(2);
+                }
+                buyLabel.textContent = "PLACE BUY LIMIT";
+            } else {
+                entryGroup.classList.add('hidden');
+                buyLabel.textContent = "LONG / BUY";
+            }
+        }
+
+        // Select Crypto Pair
+        function selectCrypto(sym) {
+            if (!sym) return;
+            currentCrypto = sym.toUpperCase().trim();
+            document.getElementById('symbol-input').value = currentCrypto;
+            document.getElementById('chart-symbol-badge').textContent = currentCrypto;
+
+            // Update TradingView Chart
+            initTradingView(currentCrypto);
+            loadTickerData(currentCrypto);
+            loadCryptoSignal(currentCrypto);
+        }
+
+        // Initialize TradingView Widget for Crypto Pair
+        function initTradingView(symbol) {
+            const container = document.getElementById('tradingview_widget_box');
+            container.innerHTML = `<div id="tradingview_chart" style="height:100%;width:100%"></div>`;
+
+            let tvSymbol = `BINANCE:${symbol}`;
+            if (symbol === "BTCUSD" || symbol === "BTCUSDT") tvSymbol = "BINANCE:BTCUSDT";
+            if (symbol === "ETHUSD" || symbol === "ETHUSDT") tvSymbol = "BINANCE:ETHUSDT";
+            if (symbol === "SOLUSD" || symbol === "SOLUSDT") tvSymbol = "BINANCE:SOLUSDT";
+
+            tvWidget = new TradingView.widget({
+                "autosize": true,
+                "symbol": tvSymbol,
+                "interval": "5",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#080c14",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview_chart",
+                "studies": [
+                    "Volume@tv-basicstudies",
+                    "RSI@tv-basicstudies"
+                ]
+            });
+        }
+
+        // Fetch Live Delta Ticker Data
+        async function loadTickerData(symbol, updateInputs = true) {
+            try {
+                const res = await fetch(`/api/crypto/ticker/${symbol}`);
+                const data = await res.json();
+                if (data.success && data.ticker) {
+                    activeTickerData = data.ticker;
+                    const p = data.ticker;
+                    document.getElementById('chart-price-badge').textContent = `$${p.mark_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    const changeEl = document.getElementById('chart-change-badge');
+                    changeEl.textContent = `${p.change_24h >= 0 ? '+' : ''}${p.change_24h.toFixed(2)}%`;
+                    changeEl.className = `text-xs font-mono font-semibold px-2 py-0.5 rounded ${p.change_24h >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`;
+
+                    document.getElementById('metric-high').textContent = `$${p.high_24h.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('metric-low').textContent = `$${p.low_24h.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('metric-funding').textContent = `${p.funding_rate >= 0 ? '+' : ''}${p.funding_rate.toFixed(4)}%`;
+
+                    document.getElementById('stat-spot').textContent = `$${p.spot_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('stat-vol').textContent = `${p.volume_24h.toFixed(2)} ${symbol.replace('USDT', '')}`;
+                    document.getElementById('stat-oi').textContent = `${p.open_interest.toFixed(2)} contracts`;
+
+                    // If inputs are empty, populate default levels
+                    if (updateInputs) {
+                        const tpInput = document.getElementById('order-take-profit');
+                        const slInput = document.getElementById('order-stop-loss');
+                        if (!tpInput.value) {
+                            tpInput.value = (p.mark_price * 1.015).toFixed(2);
+                        }
+                        if (!slInput.value) {
+                            slInput.value = (p.mark_price * 0.99).toFixed(2);
+                        }
+                    }
+
+                    // Update live ticket calculations
+                    updateTicketLiveCalculations();
+                }
+            } catch (err) {
+                console.error("Ticker fetch error:", err);
+            }
+        }
+
+        // Fetch Live Crypto Derivatives Signal & Levels
+        async function loadCryptoSignal(symbol) {
+            const size = parseFloat(document.getElementById('order-size').value) || 10;
+            const leverage = parseFloat(document.getElementById('order-leverage').value) || 10;
+            try {
+                const res = await fetch(`/api/crypto/signal/${symbol}?leverage=${leverage}&size=${size}`);
+                const data = await res.json();
+                if (data.success && data.signal) {
+                    activeSignalData = data.signal;
+                    const sig = data.signal;
+
+                    // Update Badge and Strategy Text
+                    const dirBadge = document.getElementById('signal-direction-badge');
+                    dirBadge.textContent = sig.signal_badge;
+                    if (sig.direction.includes('BUY') || sig.direction.includes('LONG')) {
+                        dirBadge.className = "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                    } else {
+                        dirBadge.className = "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                    }
+                    document.getElementById('signal-strategy-text').textContent = sig.strategy;
+                    document.getElementById('signal-rr-badge').textContent = `T1 ${sig.risk_reward_t1} | T2 ${sig.risk_reward_t2}`;
+
+                    // Update 4 Level Cards
+                    document.getElementById('signal-entry-price').textContent = `$${sig.entry_point.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('signal-entry-range').textContent = sig.entry_range;
+
+                    document.getElementById('signal-target-1').textContent = `$${sig.target_1.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('signal-t1-gain').textContent = `+${sig.target_1_gain_pct}%`;
+                    document.getElementById('signal-t1-profit').textContent = `+$${sig.expected_profit_t1_usdt.toFixed(2)} USDT`;
+                    document.getElementById('signal-t1-roi').textContent = `+${sig.roi_t1_pct}%`;
+
+                    document.getElementById('signal-target-2').textContent = `$${sig.target_2.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('signal-t2-gain').textContent = `+${sig.target_2_gain_pct}%`;
+                    document.getElementById('signal-t2-profit').textContent = `+$${sig.expected_profit_t2_usdt.toFixed(2)} USDT`;
+                    document.getElementById('signal-t2-roi').textContent = `+${sig.roi_t2_pct}%`;
+
+                    document.getElementById('signal-stop-loss').textContent = `$${sig.stop_loss.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    document.getElementById('signal-sl-loss').textContent = `-${sig.stop_loss_pct}%`;
+                    document.getElementById('signal-sl-risk').textContent = `-$${sig.expected_loss_usdt.toFixed(2)} USDT`;
+                    document.getElementById('signal-sl-roi').textContent = `-${sig.roi_loss_pct}%`;
+
+                    // Update Risk & Notional footer
+                    document.getElementById('signal-pos-info').textContent = `${sig.contracts} Contracts (${sig.coins} ${symbol.replace('USDT','')})`;
+                    document.getElementById('signal-notional').textContent = `$${sig.position_notional_usdt.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    document.getElementById('signal-margin').textContent = `$${sig.margin_required_usdt.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    document.getElementById('signal-reasoning').textContent = sig.technical_reasoning;
+
+                    // Update ticket live preview
+                    updateTicketLiveCalculations();
+                }
+            } catch (err) {
+                console.error("Signal fetch error:", err);
+            }
+        }
+
+        // Apply Signal Levels to Order Ticket
+        function applySignalToTicket(targetNum = 1) {
+            if (!activeSignalData) return;
+            activeTargetSelection = targetNum;
+
+            // Switch to Limit Order
+            document.getElementById('order-type').value = 'limit';
+            onOrderTypeChange();
+
+            // Set Limit Entry Price
+            document.getElementById('order-limit-price').value = activeSignalData.entry_point.toFixed(2);
+
+            // Set Stop-Loss
+            document.getElementById('order-stop-loss').value = activeSignalData.stop_loss.toFixed(2);
+
+            // Set Target Price
+            const tpPrice = targetNum === 2 ? activeSignalData.target_2 : activeSignalData.target_1;
+            document.getElementById('order-take-profit').value = tpPrice.toFixed(2);
+
+            // Update Target buttons styling
+            selectTicketTarget(targetNum, false);
+
+            // Recalculate
+            updateTicketLiveCalculations();
+
+            showToast(`⚡ Signal Loaded: Entry $${activeSignalData.entry_point.toFixed(2)} | Target ${targetNum}: $${tpPrice.toFixed(2)} | SL: $${activeSignalData.stop_loss.toFixed(2)}`, true);
+        }
+
+        // Quick Switch between Target 1 and Target 2 in Ticket
+        function selectTicketTarget(targetNum, updateInputs = true) {
+            activeTargetSelection = targetNum;
+            const btnT1 = document.getElementById('btn-ticket-t1');
+            const btnT2 = document.getElementById('btn-ticket-t2');
+
+            if (targetNum === 1) {
+                btnT1.className = "px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold transition";
+                btnT2.className = "px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 hover:text-white transition";
+                if (updateInputs && activeSignalData) {
+                    document.getElementById('order-take-profit').value = activeSignalData.target_1.toFixed(2);
+                }
+            } else {
+                btnT2.className = "px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold transition";
+                btnT1.className = "px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 hover:text-white transition";
+                if (updateInputs && activeSignalData) {
+                    document.getElementById('order-take-profit').value = activeSignalData.target_2.toFixed(2);
+                }
+            }
+            updateTicketLiveCalculations();
+        }
+
+        // Live Order Sizing & Expected P&L Calculator
+        function updateTicketLiveCalculations() {
+            const size = parseFloat(document.getElementById('order-size').value) || 1;
+            const leverage = parseFloat(document.getElementById('order-leverage').value) || 10;
+            const orderType = document.getElementById('order-type').value;
+            const limitVal = parseFloat(document.getElementById('order-limit-price').value);
+            const markPrice = activeTickerData ? activeTickerData.mark_price : 80000;
+            const entryPrice = (orderType === 'limit' && limitVal > 0) ? limitVal : markPrice;
+
+            let multiplier = 0.001;
+            if (currentCrypto.includes("ETH")) multiplier = 0.01;
+            else if (currentCrypto.includes("SOL")) multiplier = 0.1;
+            else if (currentCrypto.includes("XRP")) multiplier = 1.0;
+            else if (currentCrypto.includes("DOGE")) multiplier = 10.0;
+
+            const coins = size * multiplier;
+            const notional = coins * entryPrice;
+            const margin = notional / leverage;
+
+            const tp = parseFloat(document.getElementById('order-take-profit').value);
+            const sl = parseFloat(document.getElementById('order-stop-loss').value);
+
+            const marginEl = document.getElementById('ticket-est-margin');
+            if (marginEl) marginEl.textContent = `$${margin.toFixed(2)} USDT`;
+
+            const lossEl = document.getElementById('ticket-est-loss');
+            if (lossEl) {
+                if (sl && sl > 0) {
+                    const lossPerCoin = Math.abs(entryPrice - sl);
+                    const totalLoss = lossPerCoin * coins;
+                    const lossPct = margin > 0 ? (totalLoss / margin * 100).toFixed(1) : '0';
+                    lossEl.textContent = `-$${totalLoss.toFixed(2)} USDT (-${lossPct}%)`;
+                } else {
+                    lossEl.textContent = "--";
+                }
+            }
+
+            const profitEl = document.getElementById('ticket-est-profit');
+            if (profitEl) {
+                if (tp && tp > 0) {
+                    const gainPerCoin = Math.abs(tp - entryPrice);
+                    const totalGain = gainPerCoin * coins;
+                    const gainPct = margin > 0 ? (totalGain / margin * 100).toFixed(1) : '0';
+                    profitEl.textContent = `+$${totalGain.toFixed(2)} USDT (+${gainPct}%)`;
+                } else {
+                    profitEl.textContent = "--";
+                }
+            }
+
+            const rrEl = document.getElementById('ticket-est-rr');
+            if (rrEl) {
+                if (tp && sl && Math.abs(entryPrice - sl) > 0) {
+                    const rr = (Math.abs(tp - entryPrice) / Math.abs(entryPrice - sl)).toFixed(2);
+                    rrEl.textContent = `1 : ${rr}`;
+                } else {
+                    rrEl.textContent = "--";
+                }
+            }
+        }
+
+        // Execute Crypto Order (Market or Limit with OCO Bracket)
+        async function executeCryptoOrder(side) {
+            const size = parseFloat(document.getElementById('order-size').value) || 1;
+            const orderType = document.getElementById('order-type').value;
+            const leverage = parseFloat(document.getElementById('order-leverage').value) || 10;
+            const limitVal = document.getElementById('order-limit-price').value;
+            const limitPrice = orderType === 'limit' ? parseFloat(limitVal) : null;
+            const tpVal = document.getElementById('order-take-profit').value;
+            const slVal = document.getElementById('order-stop-loss').value;
+            const takeProfit = tpVal ? parseFloat(tpVal) : null;
+            const stopLoss = slVal ? parseFloat(slVal) : null;
+
+            if (orderType === 'limit' && (!limitPrice || isNaN(limitPrice) || limitPrice <= 0)) {
+                showToast("Please enter a valid Limit Entry Price.", false);
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/crypto/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: currentCrypto,
+                        size: size,
+                        side: side,
+                        order_type: orderType,
+                        limit_price: limitPrice,
+                        stop_loss: stopLoss,
+                        take_profit: takeProfit,
+                        leverage: leverage
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message || `Successfully placed ${side.toUpperCase()} order for ${size} ${currentCrypto}!`, true);
+                    loadCryptoAccount();
+                } else {
+                    showToast("Order Error: " + (data.error || "Execution failed"), false);
+                }
+            } catch (err) {
+                showToast("Execution error: " + err.message, false);
+            }
+        }
+
+        // Close Active Crypto Position
+        async function closeCurrentPosition(sym = null) {
+            const targetSymbol = sym || currentCrypto;
+            try {
+                const res = await fetch('/api/crypto/close_position', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: targetSymbol })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, true);
+                    loadCryptoAccount();
+                } else {
+                    showToast(data.error || `No open position in ${targetSymbol} to close.`, false);
+                }
+            } catch (err) {
+                showToast("Close error: " + err.message, false);
+            }
+        }
+
+        // Cancel Pending Order
+        async function cancelCryptoOrder(orderId) {
+            try {
+                const res = await fetch('/api/crypto/cancel_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("Order canceled.", true);
+                    loadCryptoAccount();
+                } else {
+                    showToast(data.error || "Cancel failed.", false);
+                }
+            } catch (err) {
+                showToast("Cancel error: " + err.message, false);
+            }
+        }
+
+        // Edit Brackets Modal
+        let editingBracketCrypto = null;
+        function openEditBracketsModal(sym, sl, tp, entry, curr) {
+            editingBracketCrypto = sym;
+            document.getElementById('modal-bracket-symbol').textContent = sym;
+            document.getElementById('modal-bracket-entry').textContent = `$${parseFloat(entry || 0).toFixed(2)}`;
+            document.getElementById('modal-bracket-current').textContent = `$${parseFloat(curr || 0).toFixed(2)}`;
+            document.getElementById('modal-bracket-sl').value = sl ? parseFloat(sl).toFixed(2) : '';
+            document.getElementById('modal-bracket-tp').value = tp ? parseFloat(tp).toFixed(2) : '';
+            document.getElementById('bracket-edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditBracketsModal() {
+            document.getElementById('bracket-edit-modal').classList.add('hidden');
+            editingBracketCrypto = null;
+        }
+
+        async function submitBracketUpdate() {
+            if (!editingBracketCrypto) return;
+            const sl = parseFloat(document.getElementById('modal-bracket-sl').value);
+            const tp = parseFloat(document.getElementById('modal-bracket-tp').value);
+            try {
+                const res = await fetch('/api/crypto/position/update_brackets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: editingBracketCrypto,
+                        stop_loss: isNaN(sl) ? null : sl,
+                        take_profit: isNaN(tp) ? null : tp
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, true);
+                    closeEditBracketsModal();
+                    loadCryptoAccount();
+                } else {
+                    showToast("Bracket update failed: " + data.error, false);
+                }
+            } catch (err) {
+                showToast("Update error: " + err.message, false);
+            }
+        }
+
+        // Load Account, Positions & Orders (Auto-Sync)
+        async function loadCryptoAccount() {
+            try {
+                // 1. Account Balances
+                const accRes = await fetch('/api/crypto/account');
+                const accData = await accRes.json();
+                if (accData.success) {
+                    const acc = accData.account;
+                    document.getElementById('header-cash').textContent = `${acc.cash_usdt.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    document.getElementById('header-margin').textContent = `${acc.available_margin.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    
+                    const unEl = document.getElementById('header-unrealized-pl');
+                    unEl.textContent = `${acc.total_unrealized_pl >= 0 ? '+' : ''}${acc.total_unrealized_pl.toFixed(2)} USDT`;
+                    unEl.className = `font-mono font-bold ml-1 ${acc.total_unrealized_pl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+                    const rzEl = document.getElementById('header-realized-pl');
+                    rzEl.textContent = `${acc.total_realized_pl >= 0 ? '+' : ''}${acc.total_realized_pl.toFixed(2)} USDT`;
+                    rzEl.className = `font-mono font-bold ml-1 ${acc.total_realized_pl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+                    document.getElementById('wallet-usdt').textContent = `${acc.cash_usdt.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    document.getElementById('wallet-margin').textContent = `${acc.available_margin.toLocaleString('en-US', {minimumFractionDigits: 2})} USDT`;
+                    document.getElementById('wallet-realized').textContent = `${acc.total_realized_pl >= 0 ? '+' : ''}${acc.total_realized_pl.toFixed(2)} USDT`;
+
+                    document.getElementById('delta-mode-label').textContent = acc.mode_badge || 'DELTA SIMULATED';
+                    document.getElementById('ticket-mode-badge').textContent = acc.mode_badge || 'DELTA SIMULATED';
+                }
+
+                // 2. Open Positions
+                const posRes = await fetch('/api/crypto/positions');
+                const posData = await posRes.json();
+                if (posData.success) {
+                    const positions = posData.positions;
+                    document.getElementById('tab-pos-count').textContent = positions.length;
+                    const tbody = document.getElementById('positions-table-body');
+                    if (positions.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-slate-500">No open positions. Use the Order Ticket to trade.</td></tr>`;
+                    } else {
+                        tbody.innerHTML = positions.map(p => `
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="px-3 py-3 font-bold text-white flex items-center gap-2">
+                                    <span>${p.symbol}</span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded font-mono bg-amber-500/20 text-amber-300">${p.mode || 'SIM'}</span>
+                                </td>
+                                <td class="px-2 py-3 uppercase text-[10px] font-bold ${p.side === 'buy' ? 'text-emerald-400' : 'text-rose-400'}">${p.side === 'buy' ? 'LONG' : 'SHORT'}</td>
+                                <td class="px-2 py-3 text-slate-300 font-bold font-mono">${p.leverage}x</td>
+                                <td class="px-3 py-3 text-right font-bold text-slate-200">${p.size}</td>
+                                <td class="px-3 py-3 text-right font-mono">$${p.avg_entry_price.toFixed(2)}</td>
+                                <td class="px-3 py-3 text-right font-mono font-bold text-white">$${p.current_price.toFixed(2)}</td>
+                                <td class="px-3 py-3 text-right font-mono text-orange-400 font-semibold">$${p.liquidation_price.toFixed(2)}</td>
+                                <td class="px-3 py-3 text-right font-mono text-rose-400 font-semibold">
+                                    ${p.stop_loss ? `$${p.stop_loss.toFixed(2)}` : '<span class="text-slate-600">None</span>'}
+                                </td>
+                                <td class="px-3 py-3 text-right font-mono text-emerald-400 font-semibold">
+                                    ${p.take_profit ? `$${p.take_profit.toFixed(2)}` : '<span class="text-slate-600">None</span>'}
+                                </td>
+                                <td class="px-3 py-3 text-right font-mono text-slate-300">${p.margin_used.toFixed(2)} U</td>
+                                <td class="px-3 py-3 text-right font-bold font-mono ${p.unrealized_pl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                    ${p.unrealized_pl >= 0 ? '+' : ''}$${p.unrealized_pl.toFixed(2)} (${p.unrealized_plpc >= 0 ? '+' : ''}${p.unrealized_plpc.toFixed(2)}%)
+                                </td>
+                                <td class="px-3 py-3 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button onclick="openEditBracketsModal('${p.symbol}', ${p.stop_loss}, ${p.take_profit}, ${p.avg_entry_price}, ${p.current_price})" 
+                                                class="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 transition">
+                                            <i data-lucide="sliders" class="w-3 h-3"></i>
+                                            <span>Edit SL/TP</span>
+                                        </button>
+                                        <button onclick="closeCurrentPosition('${p.symbol}')" 
+                                                class="px-2 py-1 rounded text-[10px] font-semibold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition">
+                                            Close
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+
+                // 3. Orders Log
+                const ordRes = await fetch('/api/crypto/orders');
+                const ordData = await ordRes.json();
+                if (ordData.success) {
+                    const orders = ordData.orders;
+                    const otbody = document.getElementById('orders-table-body');
+                    if (orders.length === 0) {
+                        otbody.innerHTML = `<tr><td colspan="10" class="px-4 py-8 text-center text-slate-500">No crypto orders recorded today.</td></tr>`;
+                    } else {
+                        otbody.innerHTML = orders.map(o => {
+                            let statusBadge = '';
+                            const st = (o.status || '').toLowerCase();
+                            if (st.includes('pending')) {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 pulse-dot"></span>PENDING (LIMIT)</span>`;
+                            } else if (st.includes('target hit')) {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 w-max">TARGET HIT</span>`;
+                            } else if (st.includes('stop hit')) {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 w-max">STOP HIT</span>`;
+                            } else if (st.includes('canceled (oco)')) {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-700/50 text-slate-400 border border-slate-700 w-max">CANCELED (OCO)</span>`;
+                            } else if (st.includes('filled')) {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 w-max">${o.status}</span>`;
+                            } else {
+                                statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700 w-max">${o.status}</span>`;
+                            }
+
+                            const cancelBtn = st.includes('pending') 
+                                ? `<button onclick="cancelCryptoOrder('${o.id}')" class="px-2 py-0.5 rounded text-[10px] bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition">Cancel</button>`
+                                : `<span class="text-slate-600">--</span>`;
+
+                            const rzText = (o.realized_pl !== undefined && o.realized_pl !== null)
+                                ? `<span class="font-bold font-mono ${o.realized_pl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${o.realized_pl >= 0 ? '+' : ''}$${o.realized_pl.toFixed(2)}</span> &bull; `
+                                : '';
+
+                            return `
+                                <tr class="hover:bg-slate-800/40 transition">
+                                    <td class="px-3 py-2.5 text-slate-400 text-[11px] font-mono">${o.id}</td>
+                                    <td class="px-3 py-2.5 font-bold text-white flex items-center gap-1.5">
+                                        <span>${o.symbol}</span>
+                                        <span class="text-[9px] px-1 py-0.2 rounded font-mono text-slate-400 bg-slate-800">${o.mode || 'SIM'}</span>
+                                    </td>
+                                    <td class="px-3 py-2.5 uppercase text-[11px] font-semibold ${o.side === 'buy' ? 'text-emerald-400' : 'text-rose-400'}">
+                                        ${o.side} <span class="text-slate-400 font-normal">(${o.type})</span>
+                                    </td>
+                                    <td class="px-2 py-2.5 text-right font-bold text-slate-200">${o.size}</td>
+                                    <td class="px-3 py-2.5 text-right font-mono text-slate-300">${o.limit_price ? `$${parseFloat(o.limit_price).toFixed(2)}` : '--'}</td>
+                                    <td class="px-3 py-2.5 text-right font-mono font-bold text-white">${o.filled_avg_price ? `$${parseFloat(o.filled_avg_price).toFixed(2)}` : '--'}</td>
+                                    <td class="px-3 py-2.5 text-right text-slate-400 text-[10px] font-mono">
+                                        SL: ${o.stop_loss ? `$${parseFloat(o.stop_loss).toFixed(2)}` : '--'} | TP: ${o.take_profit ? `$${parseFloat(o.take_profit).toFixed(2)}` : '--'}
+                                    </td>
+                                    <td class="px-3 py-2.5">${statusBadge}</td>
+                                    <td class="px-3 py-2.5 text-[11px] text-slate-300">
+                                        ${rzText}${o.note || '--'}
+                                    </td>
+                                    <td class="px-2 py-2.5 text-center">${cancelBtn}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                renderIcons();
+            } catch (err) {
+                console.error("Crypto auto-sync error:", err);
+            }
+        }
+
+        // Delta Config Modal
+        async function openDeltaConfigModal() {
+            try {
+                const res = await fetch('/api/crypto/config');
+                const cfg = await res.json();
+                if (cfg) {
+                    if (cfg.environment) document.getElementById('input-delta-env').value = cfg.environment;
+                    if (cfg.api_key) document.getElementById('input-delta-key').value = cfg.api_key;
+                    if (cfg.api_secret) document.getElementById('input-delta-secret').value = cfg.api_secret;
+                }
+            } catch(e) {}
+            document.getElementById('delta-modal').classList.remove('hidden');
+        }
+
+        function closeDeltaConfigModal() {
+            document.getElementById('delta-modal').classList.add('hidden');
+        }
+
+        async function saveDeltaKeys() {
+            const env = document.getElementById('input-delta-env').value;
+            const key = document.getElementById('input-delta-key').value;
+            const secret = document.getElementById('input-delta-secret').value;
+
+            try {
+                const res = await fetch('/api/crypto/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: key, api_secret: secret, environment: env })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Delta Exchange configured! Mode: ${data.is_live ? 'LIVE API' : 'SIMULATOR'} (${data.environment})`, true);
+                    closeDeltaConfigModal();
+                    loadCryptoAccount();
+                } else {
+                    showToast("Config error: " + data.error, false);
+                }
+            } catch (err) {
+                showToast("Config error: " + err.message, false);
+            }
+        }
+
+        // Toast Helper
+        function showToast(msg, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            toast.className = `fixed top-16 right-6 z-50 max-w-md p-4 rounded-xl border shadow-2xl transition-all duration-300 flex items-start gap-3 ${isSuccess ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200' : 'bg-rose-950/90 border-rose-500/40 text-rose-200'}`;
+            toast.innerHTML = `
+                <i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}" class="w-5 h-5 shrink-0 mt-0.5 ${isSuccess ? 'text-emerald-400' : 'text-rose-400'}"></i>
+                <div class="text-xs leading-relaxed font-sans">${msg}</div>
+            `;
+            toast.classList.remove('hidden');
+            renderIcons();
+            setTimeout(() => toast.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>
+

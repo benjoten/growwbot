@@ -1,0 +1,92 @@
+{
+  "balance_usdt": 50000.0,
+  "cash_usdt": 52343.41,
+  "portfolio_value_usdt": 50000.0,
+  "available_margin": 100000.0,
+  "realized_pl": 2343.41,
+  "positions": {},
+  "orders": [
+    {
+      "id": "42d620b4",
+      "symbol": "ETHUSDT",
+      "size": 5.0,
+      "side": "buy",
+      "type": "market",
+      "limit_price": null,
+      "filled_avg_price": 2431.9311317,
+      "stop_loss": 2900.0,
+      "take_profit": 3300.0,
+      "status": "filled",
+      "mode": "DELTA SIMULATED",
+      "note": "Market BUY order executed @ $2431.93",
+      "created_at": "2026-11-05 00:00:28"
+    },
+    {
+      "id": "c3083ebb",
+      "symbol": "ETHUSDT",
+      "size": 5.0,
+      "side": "sell",
+      "type": "stop_loss",
+      "limit_price": 2900.0,
+      "filled_avg_price": 2900.0,
+      "status": "filled (STOP HIT)",
+      "realized_pl": 2340.34,
+      "mode": "DELTA SIMULATED",
+      "note": "Automated OCO exit: STOP HIT triggered at $2900.00. Realized P&L: +2340.34 USDT",
+      "created_at": "2026-11-05 00:00:29"
+    },
+    {
+      "id": "fde1dad9",
+      "symbol": "ETHUSDT",
+      "size": 5.0,
+      "side": "sell",
+      "type": "take_profit",
+      "status": "canceled (OCO)",
+      "mode": "DELTA SIMULATED",
+      "note": "Take-Profit leg canceled automatically because STOP HIT was executed.",
+      "created_at": "2026-11-05 00:00:29"
+    },
+    {
+      "id": "bc1d9d36",
+      "symbol": "ETHUSDT",
+      "size": 2.0,
+      "side": "buy",
+      "type": "market",
+      "limit_price": null,
+      "filled_avg_price": 2432.03789474,
+      "stop_loss": 2200.0,
+      "take_profit": 2700.0,
+      "status": "filled",
+      "mode": "DELTA SIMULATED",
+      "note": "Market BUY order executed @ $2432.04",
+      "created_at": "2026-11-05 00:00:52"
+    },
+    {
+      "id": "15724230",
+      "symbol": "ETHUSDT",
+      "size": 2.0,
+      "type": "bracket_update",
+      "side": "hold",
+      "stop_loss": 2250.0,
+      "take_profit": 2750.0,
+      "status": "updated",
+      "mode": "DELTA SIMULATED",
+      "note": "Updated Stop-Loss: $2250.0 | Take-Profit: $2750.0",
+      "created_at": "2026-11-05 00:00:53"
+    },
+    {
+      "id": "50fe7ebc",
+      "symbol": "ETHUSDT",
+      "size": 2.0,
+      "side": "sell",
+      "type": "market",
+      "filled_avg_price": 2433.57066904,
+      "status": "filled (flatten)",
+      "realized_pl": 3.07,
+      "mode": "DELTA SIMULATED",
+      "note": "1-Click Closed: 2.0 ETHUSDT @ $2433.57. Realized P&L: +3.07 USDT",
+      "created_at": "2026-11-05 00:00:55"
+    }
+  ],
+  "created_at": "2026-11-04T23:54:43.124963"
+}
